@@ -1,0 +1,24 @@
+{
+	"editor.detectIndentation": false,
+	"editor.insertSpaces": false,
+	"editor.lineNumbers": "on",
+	"editor.renderIndentGuides": true,
+	"editor.renderWhitespace": "all",
+	"editor.rulers": [
+		80,
+		160,
+		240,
+		320
+	],
+	"editor.trimAutoWhitespace": true,
+	"editor.useTabStops": true,
+	"editor.wordWrapColumn": 1024,
+	"files.autoSave": "afterDelay",
+	"files.autoSaveDelay": 1000,
+	"files.insertFinalNewline": true,
+	"files.encoding": "utf8",
+	"files.eol": "\n",
+	"files.exclude": {
+		"package-lock.json": true
+	}
+}
