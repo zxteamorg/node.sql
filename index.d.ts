@@ -22,7 +22,7 @@ export interface SqlDataLike {
 
 export interface SqlProviderLike extends DisposableLike {
 	statement(sql: string): SqlStatementLike;
-	createTempTable(cancellationToken: CancellationTokenLike | null, tableName: string, columnsDefinitions: string): TaskLike<DisposableLike>;
+	createTempTable(cancellationToken: CancellationTokenLike | null, tableName: string, columnsDefinitions: string): TaskLike<SqlTemporaryTable>;
 }
 
 export interface SqlResultRecordLike {
@@ -38,4 +38,10 @@ export interface SqlStatementLike {
 	executeQuery(cancellationToken: CancellationTokenLike | null, ...values: Array<SqlStatementParam>): TaskLike<Array<SqlResultRecordLike>>;
 	//executeQueryLazy(cancellationToken: CancellationTokenLike | null, ...values: Array<SqlStatementParam>): Promise<SqlResultSet>;
 	executeScalar(cancellationToken: CancellationTokenLike | null, ...values: Array<SqlStatementParam>): TaskLike<SqlDataLike>;
+}
+
+export interface SqlTemporaryTable extends DisposableLike {
+	bulkInsert(cancellationToken: CancellationTokenLike | null, bulkValues: Array<Array<SqlStatementParam>>): TaskLike<void>;
+	crear(cancellationToken: CancellationTokenLike | null): TaskLike<void>;
+	insert(cancellationToken: CancellationTokenLike | null, values: Array<SqlStatementParam>): TaskLike<void>;
 }

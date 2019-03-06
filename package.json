@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/contract.sql",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "ZXTeam's Contract SQL interfaces",
 	"author": {
 		"name": "Maxim Anurin",
