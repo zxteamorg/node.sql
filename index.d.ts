@@ -8,6 +8,8 @@ export interface SqlDataLike {
 	readonly asNullableBoolean: boolean | null;
 	readonly asString: string;
 	readonly asNullableString: string | null;
+	readonly asInteger: number;
+	readonly asNullableInteger: number | null;
 	readonly asNumber: number;
 	readonly asNullableNumber: number | null;
 	readonly asFinancial: FinancialLike;
@@ -20,7 +22,7 @@ export interface SqlDataLike {
 
 export interface SqlProviderLike extends DisposableLike {
 	statement(sql: string): SqlStatementLike;
-	createTempTable(cancellationToken: CancellationTokenLike | null, tableName: string, columnsDefinition: string): Promise<DisposableLike>;
+	createTempTable(cancellationToken: CancellationTokenLike | null, tableName: string, columnsDefinitions: string): TaskLike<DisposableLike>;
 }
 
 export interface SqlResultRecordLike {
