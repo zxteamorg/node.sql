@@ -20,6 +20,7 @@ export interface SqlDataLike {
 
 export interface SqlProviderLike extends DisposableLike {
 	statement(sql: string): SqlStatementLike;
+	createTempTable(cancellationToken: CancellationTokenLike | null, tableName: string, columnsDefinition: string): Promise<DisposableLike>;
 }
 
 export interface SqlResultRecordLike {
