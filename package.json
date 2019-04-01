@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/contract.sql",
-	"version": "3.0.2",
+	"version": "3.2.1",
 	"description": "ZXTeam's Contract SQL interfaces",
 	"author": {
 		"name": "Maxim Anurin",
@@ -9,8 +9,8 @@
 	},
 	"contributors": [
 		{
-			"name": "Serg Zgama",
-			"email": "serg.zgama@zxteam.org"
+			"name": "Serhii Zghama",
+			"email": "serhii.zghama@zxteam.org"
 		}
 	],
 	"license": "MIT",
@@ -25,6 +25,6 @@
 	"homepage": "https://dev.zxteam.net/pub/node/contract.sql",
 	"types": "./index.d.ts",
 	"dependencies": {
-		"@zxteam/contract": "^3.0.2"
+		"@zxteam/contract": "^3.2.1"
 	}
 }

@@ -43,7 +43,9 @@ export interface SqlResultRecord {
 export interface SqlStatement {
 	execute(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<void>;
 	executeQuery(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<SqlResultRecord>>;
-	//executeQueryLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlResultSet>;
+	//executeQueryLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<SqlResultSet>;
+	executeQueryMultiSets(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<Array<SqlResultRecord>>>;
+	//executeQueryMultiSetsLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<Array<SqlResultRecord>>>;
 	executeScalar(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<SqlData>;
 }
 
