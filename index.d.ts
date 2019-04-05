@@ -1,4 +1,17 @@
-import { CancellationToken, Disposable, Financial, Task } from "@zxteam/contract";
+import { CancellationToken, Disposable, Factory, Financial, Task } from "@zxteam/contract";
+
+export interface SqlProviderFactory extends Factory<SqlProvider> {
+}
+
+export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
+	/**
+	 * Setup new database
+	 * @param cancellationToken Cancellation Token allows your to cancel execution process
+	 * @param location URL location to new database
+	 * @param initScriptUrl URL location to init SQL script. Currently supported file:// and http(s):// schemas.
+	 */
+	newDatabase(cancellationToken: CancellationToken, location: URL, initScriptUrl?: URL): Task<void>;
+}
 
 export type SqlStatementParam =
 	boolean | string | number | Financial | Date | Uint8Array

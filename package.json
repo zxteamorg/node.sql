@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/contract.sql",
-	"version": "3.2.1",
+	"version": "3.2.4",
 	"description": "ZXTeam's Contract SQL interfaces",
 	"author": {
 		"name": "Maxim Anurin",
@@ -15,6 +15,9 @@
 	],
 	"license": "MIT",
 	"keywords": [],
+	"dependencies": {
+		"@zxteam/contract": "^3.2.4"
+	},
 	"repository": {
 		"type": "git",
 		"url": "ssh://git@dev.zxteam.net:22282/pub/node/contract.sql.git"
@@ -23,8 +26,5 @@
 		"url": "https://dev.zxteam.net/pub/node/contract.sql/issues"
 	},
 	"homepage": "https://dev.zxteam.net/pub/node/contract.sql",
-	"types": "./index.d.ts",
-	"dependencies": {
-		"@zxteam/contract": "^3.2.1"
-	}
+	"types": "./index.d.ts"
 }
