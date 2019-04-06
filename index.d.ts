@@ -14,7 +14,7 @@ export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
 }
 
 export type SqlStatementParam =
-	boolean | string | number | Financial | Date | Uint8Array
+	null | boolean | string | number | Financial | Date | Uint8Array
 	| Array<string> | Array<number> | Array<Financial> | Array<Date> | Array<Uint8Array>;
 
 export interface SqlData {
