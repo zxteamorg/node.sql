@@ -50,6 +50,7 @@ test:mysql:
       alias: mysql
   before_script:
     - *utils
+    - setup_ssh
     - mkdir -p work && cd work
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
     - cd sql.mysql
