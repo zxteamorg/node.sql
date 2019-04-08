@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import * as fs from "fs";
 
 import { CancellationToken } from "@zxteam/contract";
 import { SqlProvider, SqlProviderFactory } from "@zxteam/contract.sql";
@@ -12,8 +13,13 @@ const DUMMY_CANCELLATION_TOKEN: CancellationToken = {
 	throwIfCancellationRequested(): void { /* STUB */ }
 };
 
-describe("MySQL Tests", function () {
+interface GuestQueries {
+	init: Array<string>;
+}
+
+describe("Guest Tests", function () {
 	let sqlProviderFactory: SqlProviderFactory;
+	let queries: GuestQueries;
 	let sqlProvider: SqlProvider | null;
 
 	function getSqlProvider(): SqlProvider {
@@ -41,6 +47,19 @@ describe("MySQL Tests", function () {
 				throw new Error(`Not supported DB Server protocol = ${process.env.TEST_DB_URL}`);
 			}
 			sqlProviderFactory = new Factory(url);
+			const ctor = sqlProviderFactory.constructor.name;
+			queries = JSON.parse(fs.readFileSync(__dirname + "/guest.test." + ctor + ".json").toString());
+
+			const provider = await sqlProviderFactory.create(DUMMY_CANCELLATION_TOKEN);
+			try {
+				for (let initIndex = 0; initIndex < queries.init.length; ++initIndex) {
+					const initSql = queries.init[initIndex];
+					await provider.statement(initSql).execute(DUMMY_CANCELLATION_TOKEN);
+				}
+			} finally {
+				await provider.dispose();
+			}
+
 		} else {
 			throw new Error("TEST_DB_URL environment is not defined. Please set the variable to use these tests.");
 		}
@@ -76,5 +95,14 @@ describe("MySQL Tests", function () {
 			.statement("SELECT 0")
 			.executeScalar(DUMMY_CANCELLATION_TOKEN); // executeScalar() should return first row + first column
 		assert.equal(result.asInteger, 0);
+	});
+	it("Read with IN condition", async function () {
+		const result = await getSqlProvider()
+			.statement("SELECT `A` FROM `guest_tb_1` WHERE `B` IN (?)")
+			.executeQuery(DUMMY_CANCELLATION_TOKEN, [1, 3]);
+		assert.isArray(result);
+		assert.equal(result.length, 2);
+		assert.equal(result[0].get("A").asString, "one");
+		assert.equal(result[1].get("A").asString, "three");
 	});
 });
