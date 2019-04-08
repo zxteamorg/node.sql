@@ -1,20 +1,29 @@
-image: node:10-alpine
+image: node:11-alpine
 
 .scripting: &utils |
   function setup_npm_token() {
     echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
   }
+  function setup_ssh() {
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    echo "$GITLAB_RUNNER_SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    chmod 644 ~/.ssh/known_hosts
+    eval $(ssh-agent -s)
+    echo "$GITLAB_RUNNER_SSH_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  }
   function verify_package_version() {
     local PACKAGE_VERSION=$(awk '/version/{gsub(/("|",)/,"",$2);print $2};' package.json)
-    if [ "$PACKAGE_VERSION" != "$CI_COMMIT_REF_NAME" ]; then
-      echo "Package version '${PACKAGE_VERSION}; is not same as tag version '${CI_COMMIT_REF_NAME}'" >&2
-      exit 255
+    echo "Tag $CI_COMMIT_REF_NAME . Package $PACKAGE_VERSION"
+    if [ $PACKAGE_VERSION != $CI_COMMIT_REF_NAME ]; then
+      echo "Package version ${PACKAGE_VERSION} is not same as tag version ${CI_COMMIT_REF_NAME}" >&2
+      exit -255
     fi
   }
 
-
 stages:
   - publish
+  - test
 
 publish:
   stage: publish
@@ -27,3 +36,26 @@ publish:
   only:
     - tags
 
+test:mysql:
+  when: manual
+  stage: test
+  dependencies:
+    - publish
+  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  variables:
+    GIT_STRATEGY: none
+    TEST_DB_URL: 'mysql://devtest@mysql:3306/emptytestdb'
+  services:
+    - name: registry.dev.zxteam.net/pub/docker/test/mysql8:1
+      alias: mysql
+  before_script:
+    - *utils
+    - mkdir -p work && cd work
+    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
+    - cd sql.mysql
+  script:
+    - npm install --progress=false
+    - npm install --progress=false @zxteam/contract.sql@latest
+    - npm run build
+    - npm run prepare:devdb
+    - npm run test
