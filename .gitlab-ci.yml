@@ -43,7 +43,6 @@ test:mysql:
     - publish
   image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
   variables:
-    GIT_STRATEGY: none
     TEST_DB_URL: 'mysql://devtest@mysql:3306/emptytestdb'
   services:
     - name: registry.dev.zxteam.net/pub/docker/test/mysql8:1
@@ -55,6 +54,7 @@ test:mysql:
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
     - cd sql.mysql
     - git log -1
+    - ls -l ../../
     - cp ../../guest.test.* test/
   script:
     - npm install --progress=false
