@@ -54,6 +54,8 @@ test:mysql:
     - mkdir -p work && cd work
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
     - cd sql.mysql
+    - git log -1
+    - cp ../../guest.test.* test/
   script:
     - npm install --progress=false
     - npm install --progress=false @zxteam/contract.sql@latest
