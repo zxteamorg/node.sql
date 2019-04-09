@@ -54,7 +54,6 @@ test:mysql:
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
     - cd sql.mysql
     - git log -1
-    - ls -l ../../
     - cp ../../guest.test.* test/
   script:
     - npm install --progress=false
@@ -81,7 +80,6 @@ test:postgres:
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.postgres.git 
     - cd sql.postgres
     - git log -1
-    - ls -l ../../
     - cp ../../guest.test.* test/
   script:
     - npm install --progress=false
@@ -105,7 +103,6 @@ test:sqlite:
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.sqlite.git
     - cd sql.sqlite
     - git log -1
-    - ls -l ../../
     - cp ../../guest.test.* test/
   script:
     - npm install --progress=false
