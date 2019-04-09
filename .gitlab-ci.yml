@@ -103,7 +103,7 @@ test:sqlite:
     - setup_ssh
     - mkdir -p work && cd work
     - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.sqlite.git
-    - cd sql.postgres
+    - cd sql.sqlite
     - git log -1
     - ls -l ../../
     - cp ../../guest.test.* test/
