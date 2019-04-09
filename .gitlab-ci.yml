@@ -95,7 +95,7 @@ test:sqlite:
     - publish
   image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
   variables:
-    TEST_DB_URL: 'postgres://devtest@postgres:5432/emptytestdb'
+    TEST_DB_URL: 'file:///tmp/emptytest.db'
   before_script:
     - *utils
     - setup_ssh

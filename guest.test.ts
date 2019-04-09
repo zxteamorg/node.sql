@@ -2,7 +2,7 @@ import { assert } from "chai";
 import * as fs from "fs";
 
 import { CancellationToken } from "@zxteam/contract";
-import { SqlProvider, SqlProviderFactory } from "@zxteam/contract.sql";
+import { SqlProvider, SqlProviderFactory, EmbeddedSqlProviderFactory } from "@zxteam/contract.sql";
 
 import Factory from "../";
 
@@ -43,11 +43,20 @@ describe("Guest Tests", function () {
 			}
 
 			const url = new URL(urlStr);
-			if (url.protocol !== "mysql:") {
-				throw new Error(`Not supported DB Server protocol = ${process.env.TEST_DB_URL}`);
+			switch (url.protocol) {
+				case "postgres:":
+				case "mysql:":
+				case "file:":
+					break;
+				default:
+					throw new Error(`Not supported DB Server protocol = ${process.env.TEST_DB_URL}`);
 			}
 			sqlProviderFactory = new Factory(url);
 			const ctor = sqlProviderFactory.constructor.name;
+			if (ctor === "SqliteProviderFactory") {
+				await (sqlProviderFactory as EmbeddedSqlProviderFactory).newDatabase(DUMMY_CANCELLATION_TOKEN);
+			}
+
 			queries = JSON.parse(fs.readFileSync(__dirname + "/guest.test." + ctor + ".json").toString());
 
 			const provider = await sqlProviderFactory.create(DUMMY_CANCELLATION_TOKEN);
