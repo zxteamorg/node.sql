@@ -62,3 +62,53 @@ test:mysql:
     - npm run build
     - npm run prepare:devdb
     - npm run test
+
+test:postgres:
+  when: manual
+  stage: test
+  dependencies:
+    - publish
+  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  variables:
+    TEST_DB_URL: 'postgres://devtest@postgres:5432/emptytestdb'
+  services:
+    - name: registry.dev.zxteam.net/pub/docker/test/postgres10:1
+      alias: postgres
+  before_script:
+    - *utils
+    - setup_ssh
+    - mkdir -p work && cd work
+    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.postgres.git 
+    - cd sql.postgres
+    - git log -1
+    - ls -l ../../
+    - cp ../../guest.test.* test/
+  script:
+    - npm install --progress=false
+    - npm install --progress=false @zxteam/contract.sql@latest
+    - npm run build
+    - npm run prepare:devdb
+    - npm run test
+
+test:sqlite:
+  when: manual
+  stage: test
+  dependencies:
+    - publish
+  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  variables:
+    TEST_DB_URL: 'postgres://devtest@postgres:5432/emptytestdb'
+  before_script:
+    - *utils
+    - setup_ssh
+    - mkdir -p work && cd work
+    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.sqlite.git
+    - cd sql.postgres
+    - git log -1
+    - ls -l ../../
+    - cp ../../guest.test.* test/
+  script:
+    - npm install --progress=false
+    - npm install --progress=false @zxteam/contract.sql@latest
+    - npm run build
+    - npm run test

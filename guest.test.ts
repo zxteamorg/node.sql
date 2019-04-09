@@ -63,19 +63,6 @@ describe("Guest Tests", function () {
 		} else {
 			throw new Error("TEST_DB_URL environment is not defined. Please set the variable to use these tests.");
 		}
-
-
-		// Uncomment rows below to enable trace log
-		/*
-		configure({
-			appenders: {
-				out: { type: "console" }
-			},
-			categories: {
-				default: { appenders: ["out"], level: "trace" }
-			}
-		});
-		*/
 	});
 
 	beforeEach(async function () {

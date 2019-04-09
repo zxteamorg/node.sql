@@ -5,12 +5,18 @@ export interface SqlProviderFactory extends Factory<SqlProvider> {
 
 export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
 	/**
+	 * Check if a Database exists
+	 * @param cancellationToken Cancellation Token allows your to cancel execution process
+	 */
+	isDatabaseExists(cancellationToken: CancellationToken): Task<boolean>;
+
+	/**
 	 * Setup new database
 	 * @param cancellationToken Cancellation Token allows your to cancel execution process
 	 * @param location URL location to new database
 	 * @param initScriptUrl URL location to init SQL script. Currently supported file:// and http(s):// schemas.
 	 */
-	newDatabase(cancellationToken: CancellationToken, location: URL, initScriptUrl?: URL): Task<void>;
+	newDatabase(cancellationToken: CancellationToken, initScriptUrl?: URL): Task<void>;
 }
 
 export type SqlStatementParam =
