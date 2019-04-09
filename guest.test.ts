@@ -1,5 +1,7 @@
 import { assert } from "chai";
 import * as fs from "fs";
+import { fileURLToPath } from "url";
+
 
 import { CancellationToken } from "@zxteam/contract";
 import { SqlProvider, SqlProviderFactory, EmbeddedSqlProviderFactory } from "@zxteam/contract.sql";
@@ -54,6 +56,10 @@ describe("Guest Tests", function () {
 			sqlProviderFactory = new Factory(url);
 			const ctor = sqlProviderFactory.constructor.name;
 			if (ctor === "SqliteProviderFactory") {
+				const dbPath = fileURLToPath(url);
+				if (fs.existsSync(dbPath)) {
+					fs.unlinkSync(dbPath);
+				}
 				await (sqlProviderFactory as EmbeddedSqlProviderFactory).newDatabase(DUMMY_CANCELLATION_TOKEN);
 			}
 

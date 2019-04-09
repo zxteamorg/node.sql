@@ -1,7 +1,7 @@
 {
 	"init": [
 		"DROP TABLE IF EXISTS \"guest_tb_1\"",
-		"CREATE TABLE \"guest_tb_1\" (\"A\" VARCHAR(128) NOT NULL, \"B\" INT NOT NULL, UNIQUE KEY \"uq__varchar\" (\"A\"), UNIQUE KEY \"uq__int\" (\"B\"))",
+		"CREATE TABLE \"guest_tb_1\" (\"A\" VARCHAR(128) NOT NULL, \"B\" INT NOT NULL, CONSTRAINT \"guest_tb_1\" UNIQUE (\"A\"), CONSTRAINT \"guest_tb_2\" UNIQUE (\"B\"))",
 		"INSERT INTO \"guest_tb_1\" VALUES ('one', 1)",
 		"INSERT INTO \"guest_tb_1\" VALUES ('two', 2)",
 		"INSERT INTO \"guest_tb_1\" VALUES ('three', 3)"
