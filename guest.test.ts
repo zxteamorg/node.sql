@@ -65,14 +65,14 @@ describe("Guest Tests", function () {
 
 			queries = JSON.parse(fs.readFileSync(__dirname + "/guest.test." + ctor + ".json").toString());
 
-			const provider = await sqlProviderFactory.create(DUMMY_CANCELLATION_TOKEN);
+			const provider = await sqlProviderFactory.create(DUMMY_CANCELLATION_TOKEN).promise;
 			try {
 				for (let initIndex = 0; initIndex < queries.init.length; ++initIndex) {
 					const initSql = queries.init[initIndex];
-					await provider.statement(initSql).execute(DUMMY_CANCELLATION_TOKEN);
+					await provider.statement(initSql).execute(DUMMY_CANCELLATION_TOKEN).promise;
 				}
 			} finally {
-				await provider.dispose();
+				await provider.dispose().promise;
 			}
 
 		} else {
@@ -82,7 +82,7 @@ describe("Guest Tests", function () {
 
 	beforeEach(async function () {
 		// runs before each test in this block
-		sqlProvider = await sqlProviderFactory.create();
+		sqlProvider = await sqlProviderFactory.create().promise;
 	});
 	afterEach(async function () {
 		// runs after each test in this block
@@ -95,13 +95,13 @@ describe("Guest Tests", function () {
 	it("Read 0 as Integer through executeScalar", async function () {
 		const result = await getSqlProvider()
 			.statement("SELECT 0")
-			.executeScalar(DUMMY_CANCELLATION_TOKEN); // executeScalar() should return first row + first column
+			.executeScalar(DUMMY_CANCELLATION_TOKEN).promise; // executeScalar() should return first row + first column
 		assert.equal(result.asInteger, 0);
 	});
 	it("Read with IN condition", async function () {
 		const result = await getSqlProvider()
 			.statement("SELECT `A` FROM `guest_tb_1` WHERE `B` IN (?)")
-			.executeQuery(DUMMY_CANCELLATION_TOKEN, [1, 3]);
+			.executeQuery(DUMMY_CANCELLATION_TOKEN, [1, 3]).promise;
 		assert.isArray(result);
 		assert.equal(result.length, 2);
 		assert.equal(result[0].get("A").asString, "one");
