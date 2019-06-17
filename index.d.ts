@@ -19,6 +19,21 @@ export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
 	newDatabase(cancellationToken: zxteam.CancellationToken, initScriptUrl?: URL): zxteam.Task<void>;
 }
 
+export const enum SqlDialect {
+	/**
+	 * https://en.wikipedia.org/wiki/MySQL
+	 */
+	MySQL,
+	/**
+	 * https://en.wikipedia.org/wiki/PostgreSQL
+	 */
+	PostgreSQL,
+	/**
+	 * https://en.wikipedia.org/wiki/SQLite
+	 */
+	SQLite
+}
+
 export type SqlStatementParam =
 	null | boolean | string | number | zxteam.Financial | Date | Uint8Array
 	| Array<string> | Array<number> | Array<zxteam.Financial> | Array<Date> | Array<Uint8Array>;
@@ -47,6 +62,7 @@ export interface SqlData {
 }
 
 export interface SqlProvider extends zxteam.Disposable {
+	readonly dialect: SqlDialect;
 	statement(sql: string): SqlStatement;
 	createTempTable(cancellationToken: zxteam.CancellationToken, tableName: string, columnsDefinitions: string): zxteam.Task<SqlTemporaryTable>;
 }

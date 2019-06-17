@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/contract.sql",
-	"version": "5.0.0",
+	"version": "5.0.1",
 	"description": "ZXTeam's Contract SQL interfaces",
 	"author": {
 		"name": "ZXTeam",
@@ -21,7 +21,7 @@
 	"license": "MIT",
 	"keywords": [],
 	"dependencies": {
-		"@zxteam/contract": "^5.0.0"
+		"@zxteam/contract": "^5.0.1"
 	},
 	"repository": {
 		"type": "git",
