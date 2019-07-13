@@ -20,5 +20,7 @@
 	"files.eol": "\n",
 	"files.exclude": {
 		"package-lock.json": true
-	}
+	},
+	"git.enabled": true,
+	"git.rebaseWhenSync": true
 }
