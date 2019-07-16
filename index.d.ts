@@ -1,6 +1,7 @@
 import * as zxteam from "@zxteam/contract";
 
-export interface SqlProviderFactory extends zxteam.Factory<SqlProvider> {
+export interface SqlProviderFactory {
+	create(cancellationToken: zxteam.CancellationToken): Promise<SqlProvider>;
 }
 
 export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
@@ -8,7 +9,7 @@ export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
 	 * Check if a Database exists
 	 * @param cancellationToken Cancellation Token allows your to cancel execution process
 	 */
-	isDatabaseExists(cancellationToken: zxteam.CancellationToken): zxteam.Task<boolean>;
+	isDatabaseExists(cancellationToken: zxteam.CancellationToken): Promise<boolean>;
 
 	/**
 	 * Setup new database
@@ -16,7 +17,7 @@ export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
 	 * @param location URL location to new database
 	 * @param initScriptUrl URL location to init SQL script. Currently supported file:// and http(s):// schemas.
 	 */
-	newDatabase(cancellationToken: zxteam.CancellationToken, initScriptUrl?: URL): zxteam.Task<void>;
+	newDatabase(cancellationToken: zxteam.CancellationToken, initScriptUrl?: URL): Promise<void>;
 }
 
 export const enum SqlDialect {
@@ -35,8 +36,11 @@ export const enum SqlDialect {
 }
 
 export type SqlStatementParam =
-	null | boolean | string | number | zxteam.Financial | Date | Uint8Array
-	| Array<string> | Array<number> | Array<zxteam.Financial> | Array<Date> | Array<Uint8Array>;
+	null | boolean | string | number
+	| zxteam.Financial | Date | Uint8Array
+	| ReadonlyArray<string> | ReadonlyArray<number>
+	| ReadonlyArray<zxteam.Financial> | ReadonlyArray<Date>
+	| ReadonlyArray<Uint8Array>;
 
 export interface SqlData {
 	readonly asBoolean: boolean;
@@ -64,7 +68,7 @@ export interface SqlData {
 export interface SqlProvider extends zxteam.Disposable {
 	readonly dialect: SqlDialect;
 	statement(sql: string): SqlStatement;
-	createTempTable(cancellationToken: zxteam.CancellationToken, tableName: string, columnsDefinitions: string): zxteam.Task<SqlTemporaryTable>;
+	createTempTable(cancellationToken: zxteam.CancellationToken, tableName: string, columnsDefinitions: string): Promise<SqlTemporaryTable>;
 }
 
 export interface SqlResultRecord {
@@ -76,16 +80,16 @@ export interface SqlResultRecord {
 // }
 
 export interface SqlStatement {
-	execute(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): zxteam.Task<void>;
-	executeQuery(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): zxteam.Task<Array<SqlResultRecord>>;
-	//executeQueryLazy(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): zxteam.Task<SqlResultSet>;
-	executeQueryMultiSets(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): zxteam.Task<Array<Array<SqlResultRecord>>>;
+	execute(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Promise<void>;
+	executeQuery(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<SqlResultRecord>>;
+	//executeQueryLazy(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlResultSet>;
+	executeQueryMultiSets(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
 	//executeQueryMultiSetsLazy(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<Array<SqlResultRecord>>>;
-	executeScalar(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): zxteam.Task<SqlData>;
+	executeScalar(cancellationToken: zxteam.CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData>;
 }
 
 export interface SqlTemporaryTable extends zxteam.Disposable {
-	bulkInsert(cancellationToken: zxteam.CancellationToken, bulkValues: Array<Array<SqlStatementParam>>): zxteam.Task<void>;
-	crear(cancellationToken: zxteam.CancellationToken): zxteam.Task<void>;
-	insert(cancellationToken: zxteam.CancellationToken, values: Array<SqlStatementParam>): zxteam.Task<void>;
+	bulkInsert(cancellationToken: zxteam.CancellationToken, bulkValues: ReadonlyArray<ReadonlyArray<SqlStatementParam>>): Promise<void>;
+	clear(cancellationToken: zxteam.CancellationToken): Promise<void>;
+	insert(cancellationToken: zxteam.CancellationToken, values: ReadonlyArray<SqlStatementParam>): Promise<void>;
 }
