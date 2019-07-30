@@ -1,17 +1,17 @@
 {
-	"name": "@zxteam/contract.sql",
-	"version": "6.0.2",
-	"description": "ZXTeam's Contract SQL interfaces",
+	"name": "@zxteam/contract-sql",
+	"version": "6.0.8",
+	"description": "ZXTeam's Contract SQL",
 	"author": {
 		"name": "ZXTeam",
-		"email": "pub@project.zxteam.org",
-		"url": "http://www.zxteam.org"
+		"email": "pub@zxteam.org",
+		"url": "https://www.zxteam.org"
 	},
 	"contributors": [
 		{
 			"name": "Maxim Anurin",
 			"email": "maxim.anurin@zxteam.org",
-			"url": "http://www.anurin.name"
+			"url": "https://www.anurin.name"
 		},
 		{
 			"name": "Serhii Zghama",
@@ -21,15 +21,15 @@
 	"license": "MIT",
 	"keywords": [],
 	"dependencies": {
-		"@zxteam/contract": "^6.0.2"
+		"@zxteam/contract": "^6.0.7"
 	},
 	"repository": {
 		"type": "git",
-		"url": "ssh://git@dev.zxteam.net:22282/pub/node/contract.sql.git"
+		"url": "https://github.com/zxteamorg/node.contract-sql.git"
 	},
 	"bugs": {
-		"url": "https://dev.zxteam.net/pub/node/contract.sql/issues"
+		"url": "https://github.com/zxteamorg/node.contract-sql/issues"
 	},
-	"homepage": "https://dev.zxteam.net/pub/node/contract.sql",
+	"homepage": "https://github.com/zxteamorg/node.contract-sql",
 	"types": "./index.d.ts"
 }

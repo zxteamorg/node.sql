@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 
 import { CancellationToken } from "@zxteam/contract";
-import { SqlProvider, SqlProviderFactory, EmbeddedSqlProviderFactory } from "@zxteam/contract.sql";
+import { SqlProvider, SqlProviderFactory, EmbeddedSqlProviderFactory } from "@zxteam/contract-sql";
 
 import Factory from "../";
 
