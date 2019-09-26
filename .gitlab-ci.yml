@@ -51,7 +51,7 @@ test:mysql:
     - *utils
     - setup_ssh
     - mkdir -p work && cd work
-    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.mysql.git 
+    - git clone ssh://git@code.zxteam.net:22282/pub/node/sql.mysql.git
     - cd sql.mysql
     - git log -1
     - cp ../../guest.test.* test/
@@ -77,7 +77,7 @@ test:postgres:
     - *utils
     - setup_ssh
     - mkdir -p work && cd work
-    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.postgres.git 
+    - git clone ssh://git@code.zxteam.net:22282/pub/node/sql.postgres.git
     - cd sql.postgres
     - git log -1
     - cp ../../guest.test.* test/
@@ -100,7 +100,7 @@ test:sqlite:
     - *utils
     - setup_ssh
     - mkdir -p work && cd work
-    - git clone ssh://git@dev.zxteam.net:22282/pub/node/sql.sqlite.git
+    - git clone ssh://git@code.zxteam.net:22282/pub/node/sql.sqlite.git
     - cd sql.sqlite
     - git log -1
     - cp ../../guest.test.* test/
