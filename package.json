@@ -1,6 +1,6 @@
 {
-	"name": "@zxteam/contract-sql",
-	"version": "6.0.21",
+	"name": "@zxteam/sql",
+	"version": "6.0.23",
 	"description": "ZXTeam's Contract SQL",
 	"author": {
 		"name": "ZXTeam",
@@ -21,15 +21,15 @@
 	"license": "MIT",
 	"keywords": [],
 	"dependencies": {
-		"@zxteam/contract": "^6.0.21"
+		"@zxteam/contract": "^6.0.23"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/zxteamorg/node.contract-sql.git"
+		"url": "https://github.com/zxteamorg/node.sql.git"
 	},
 	"bugs": {
-		"url": "https://github.com/zxteamorg/node.contract-sql/issues"
+		"url": "https://github.com/zxteamorg/node.sql/issues"
 	},
-	"homepage": "https://github.com/zxteamorg/node.contract-sql",
+	"homepage": "https://github.com/zxteamorg/node.sql",
 	"types": "./index.d.ts"
 }

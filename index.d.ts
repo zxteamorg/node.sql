@@ -86,6 +86,7 @@ export interface SqlStatement {
 	executeQueryMultiSets(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
 	//executeQueryMultiSetsLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<Array<SqlResultRecord>>>;
 	executeScalar(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData>;
+	executeScalarOrNull(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData | null>;
 }
 
 export interface SqlTemporaryTable extends Disposable {
