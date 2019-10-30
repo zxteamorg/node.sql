@@ -24,15 +24,15 @@ export const enum SqlDialect {
 	/**
 	 * https://en.wikipedia.org/wiki/MySQL
 	 */
-	MySQL,
+	MySQL = "MySQL",
 	/**
 	 * https://en.wikipedia.org/wiki/PostgreSQL
 	 */
-	PostgreSQL,
+	PostgreSQL = "PostgreSQL",
 	/**
 	 * https://en.wikipedia.org/wiki/SQLite
 	 */
-	SQLite
+	SQLite = "SQLite"
 }
 
 export type SqlStatementParam =
