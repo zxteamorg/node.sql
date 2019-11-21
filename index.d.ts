@@ -80,11 +80,16 @@ export interface SqlResultRecord {
 // }
 
 export interface SqlStatement {
+	/**
+	 * Execute query and ingnore any output
+	 */
 	execute(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<void>;
+	/**
+	 * Execute query with expectaion of single line result
+	 */
+	executeSingle(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlResultRecord>;
 	executeQuery(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<SqlResultRecord>>;
-	//executeQueryLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlResultSet>;
 	executeQueryMultiSets(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
-	//executeQueryMultiSetsLazy(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Task<Array<Array<SqlResultRecord>>>;
 	executeScalar(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData>;
 	executeScalarOrNull(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData | null>;
 }

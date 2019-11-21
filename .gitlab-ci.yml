@@ -2,7 +2,7 @@ image: node:11-alpine
 
 .scripting: &utils |
   function setup_npm_token() {
-    echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+    echo "//registry.npmjs.org/:_authToken=$NPMJS_ORG_TOKEN" >> ~/.npmrc
   }
   function setup_ssh() {
     mkdir -p ~/.ssh
@@ -41,11 +41,11 @@ test:mysql:
   stage: test
   dependencies:
     - publish
-  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  image: docker.registry.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
   variables:
     TEST_DB_URL: 'mysql://devtest@mysql:3306/emptytestdb'
   services:
-    - name: registry.dev.zxteam.net/pub/docker/test/mysql8:1
+    - name: docker.registry.zxteam.net/pub/docker/test/mysql8:1
       alias: mysql
   before_script:
     - *utils
@@ -67,11 +67,11 @@ test:postgres:
   stage: test
   dependencies:
     - publish
-  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  image: docker.registry.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
   variables:
     TEST_DB_URL: 'postgres://devtest@postgres:5432/emptytestdb'
   services:
-    - name: registry.dev.zxteam.net/pub/docker/test/postgres10:1
+    - name: docker.registry.zxteam.net/pub/docker/test/postgres10:1
       alias: postgres
   before_script:
     - *utils
@@ -93,7 +93,7 @@ test:sqlite:
   stage: test
   dependencies:
     - publish
-  image: registry.dev.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
+  image: docker.registry.zxteam.net/pub/docker/build/node10.protoc-mysqlcli-psqlcli:1
   variables:
     TEST_DB_URL: 'file:///tmp/emptytest.db'
   before_script:
