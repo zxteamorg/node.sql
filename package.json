@@ -21,7 +21,7 @@
 	"license": "MIT",
 	"keywords": [],
 	"dependencies": {
-		"@zxteam/contract": "^6.0.23"
+		"@zxteam/contract": "^6.0.35"
 	},
 	"repository": {
 		"type": "git",
