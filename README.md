@@ -5,7 +5,7 @@
 [![last commit badge](https://img.shields.io/github/last-commit/zxteamorg/node.sql)](https://github.com/zxteamorg/node.sql/graphs/commit-activity)
 [![twitter badge](https://img.shields.io/twitter/follow/zxteamorg?style=social&logo=twitter)](https://twitter.com/zxteamorg)
 
-The package has TypeScript declarations only.
+The package declares TypeScript interfaces and error classes.
 
 ## Interfaces
 ### EmbeddedSqlProviderFactory

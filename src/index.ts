@@ -1,4 +1,5 @@
 import { CancellationToken, Disposable, Financial } from "@zxteam/contract";
+import { InnerError } from "@zxteam/errors";
 
 export interface SqlProviderFactory {
 	create(cancellationToken: CancellationToken): Promise<SqlProvider>;
@@ -68,7 +69,9 @@ export interface SqlData {
 export interface SqlProvider extends Disposable {
 	readonly dialect: SqlDialect;
 	statement(sql: string): SqlStatement;
-	createTempTable(cancellationToken: CancellationToken, tableName: string, columnsDefinitions: string): Promise<SqlTemporaryTable>;
+	createTempTable(
+		cancellationToken: CancellationToken, tableName: string, columnsDefinitions: string
+	): Promise<SqlTemporaryTable>;
 }
 
 export interface SqlResultRecord {
@@ -87,15 +90,51 @@ export interface SqlStatement {
 	/**
 	 * Execute query with expectaion of single line result
 	 */
-	executeSingle(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlResultRecord>;
-	executeQuery(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<SqlResultRecord>>;
-	executeQueryMultiSets(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
-	executeScalar(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData>;
-	executeScalarOrNull(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<SqlData | null>;
+	executeSingle(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<SqlResultRecord>;
+	executeQuery(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<ReadonlyArray<SqlResultRecord>>;
+	executeQueryMultiSets(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
+	executeScalar(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<SqlData>;
+	executeScalarOrNull(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<SqlData | null>;
 }
 
 export interface SqlTemporaryTable extends Disposable {
-	bulkInsert(cancellationToken: CancellationToken, bulkValues: ReadonlyArray<ReadonlyArray<SqlStatementParam>>): Promise<void>;
-	clear(cancellationToken: CancellationToken): Promise<void>;
-	insert(cancellationToken: CancellationToken, values: ReadonlyArray<SqlStatementParam>): Promise<void>;
+	bulkInsert(
+		cancellationToken: CancellationToken, bulkValues: ReadonlyArray<ReadonlyArray<SqlStatementParam>>
+	): Promise<void>;
+	clear(
+		cancellationToken: CancellationToken
+	): Promise<void>;
+	insert(
+		cancellationToken: CancellationToken, values: ReadonlyArray<SqlStatementParam>
+	): Promise<void>;
+}
+
+
+export class SqlError extends InnerError {
+	// Base class for all errors produced by an implementation library
+}
+
+export class SqlSyntaxError extends SqlError {
+}
+
+export class SqlConstraintError extends SqlError {
+	public readonly constraintName: string;
+
+	public constructor(message: string, constraintName: string, innerError: Error) {
+		super(message, innerError);
+		this.constraintName = constraintName;
+	}
+}
+
+export class SqlConnectionError extends SqlError {
 }
