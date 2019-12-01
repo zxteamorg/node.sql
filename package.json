@@ -1,6 +1,7 @@
 {
 	"name": "@zxteam/sql",
-	"version": "6.0.38",
+	"version": "6.0.39",
+	"description": "ZXTeam's Contract SQL",
 	"author": {
 		"name": "ZXTeam",
 		"email": "pub@project.zxteam.org",
