@@ -3,6 +3,12 @@ import { InnerError } from "@zxteam/errors";
 
 export interface SqlProviderFactory {
 	create(cancellationToken: CancellationToken): Promise<SqlProvider>;
+	usingProvider<T>(
+		cancellationToken: CancellationToken, worker: (sqlProvder: SqlProvider) => T | Promise<T>
+	): Promise<T>;
+	usingProviderWithTransaction<T>(
+		cancellationToken: CancellationToken, worker: (sqlProvder: SqlProvider) => T | Promise<T>
+	): Promise<T>;
 }
 
 export interface EmbeddedSqlProviderFactory extends SqlProviderFactory {
