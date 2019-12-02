@@ -130,7 +130,7 @@ export class SqlError extends InnerError {
 	// Base class for all errors produced by an implementation library
 }
 
-export class SqlSyntaxError extends SqlError {
+export class SqlConnectionError extends SqlError {
 }
 
 export class SqlConstraintError extends SqlError {
@@ -142,5 +142,9 @@ export class SqlConstraintError extends SqlError {
 	}
 }
 
-export class SqlConnectionError extends SqlError {
+export class SqlNoSuchRecordError extends SqlError {
 }
+
+export class SqlSyntaxError extends SqlError {
+}
+
