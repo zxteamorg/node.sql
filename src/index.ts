@@ -70,6 +70,9 @@ export interface SqlData {
 
 	readonly asBinary: Uint8Array;
 	readonly asNullableBinary: Uint8Array | null;
+
+	readonly asObject: any;
+	readonly asNullableObject: any | null;
 }
 
 export interface SqlProvider extends Disposable {
