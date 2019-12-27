@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/sql",
-	"version": "6.0.43",
+	"version": "6.0.44",
 	"description": "ZXTeam's Contract SQL",
 	"author": {
 		"name": "ZXTeam",
@@ -20,8 +20,9 @@
 	],
 	"license": "MIT",
 	"dependencies": {
-		"@zxteam/contract": "^6.0.35",
-		"@zxteam/errors": "^6.0.33"
+		"@zxteam/contract": "^6.0.40",
+		"@zxteam/disposable": "^6.0.40",
+		"@zxteam/errors": "^6.0.41"
 	},
 	"devDependencies": {
 		"@types/node": "^11.15.3",

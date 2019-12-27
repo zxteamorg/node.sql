@@ -93,24 +93,29 @@ export interface SqlResultRecord {
 
 export interface SqlStatement {
 	/**
-	 * Execute query and ingnore any output
+	 * Execute query and ignore any output
 	 */
 	execute(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<void>;
+
 	/**
-	 * Execute query with expectaion of single line result
+	 * Execute query with expectation of single line result
 	 */
 	executeSingle(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<SqlResultRecord>;
+
 	executeQuery(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<ReadonlyArray<SqlResultRecord>>;
+
 	executeQueryMultiSets(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<ReadonlyArray<ReadonlyArray<SqlResultRecord>>>;
+
 	executeScalar(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<SqlData>;
+
 	executeScalarOrNull(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<SqlData | null>;
@@ -151,3 +156,4 @@ export class SqlNoSuchRecordError extends SqlError {
 export class SqlSyntaxError extends SqlError {
 }
 
+export { MigrationManager } from "./MigrationManager";
