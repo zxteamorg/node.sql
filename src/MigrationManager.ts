@@ -3,11 +3,12 @@ import { Initable } from "@zxteam/disposable";
 import { InnerError, InvalidOperationError } from "@zxteam/errors";
 
 import * as fs from "fs";
+import { EOL } from "os";
 import * as path from "path";
 import { promisify } from "util";
 import * as vm from "vm";
 
-import { SqlProviderFactory, SqlProvider } from "./index";
+import { SqlProviderFactory, SqlProvider, SqlError } from "./index";
 
 const existsAsync = promisify(fs.exists);
 const readdirAsync = promisify(fs.readdir);
@@ -16,12 +17,17 @@ const readFileAsync = promisify(fs.readFile);
 export abstract class MigrationManager extends Initable {
 	private readonly _migrationFilesRootPath: string;
 	private readonly _sqlProviderFactory: SqlProviderFactory;
+	private readonly _log: Logger;
+	private readonly _versionTableName: string;
+
 	private _migrationData: MigrationManager.MigrationData | null;
 
-	public constructor(migrationFilesRootPath: string, sqlProviderFactory: SqlProviderFactory) {
+	public constructor(opts: MigrationManager.Opts) {
 		super();
-		this._migrationFilesRootPath = migrationFilesRootPath;
-		this._sqlProviderFactory = sqlProviderFactory;
+		this._migrationFilesRootPath = opts.migrationFilesRootPath;
+		this._sqlProviderFactory = opts.sqlProviderFactory;
+		this._log = opts.log;
+		this._versionTableName = opts.versionTableName !== undefined ? opts.versionTableName : "version";
 		this._migrationData = null;
 	}
 
@@ -30,7 +36,64 @@ export abstract class MigrationManager extends Initable {
 	 * @param cancellationToken Allows to request cancel of the operation.
 	 * @param targetVersion Optional target version. Will use latest version if omited.
 	 */
-	public abstract migrate(cancellationToken: CancellationToken, targetVersion?: string): Promise<void>;
+	public async migrate(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
+		const currentVersion: string | null = await this.getCurrentVersion(cancellationToken);
+		const availableVersions: Array<string> = Object.keys(this.migrationData).sort();
+		let scheduleVersions: Array<string> = availableVersions;
+
+		if (currentVersion !== null) {
+			scheduleVersions = scheduleVersions.reduce<Array<string>>(function (p, c) { if (c > currentVersion) { p.push(c); } return p; }, []);
+		}
+
+		if (targetVersion !== undefined) {
+			scheduleVersions = scheduleVersions.reduceRight<Array<string>>(function (p, c) {
+				if (c <= targetVersion) { p.push(c); } return p;
+			}, []);
+		}
+
+		await this.sqlProviderFactory.usingProvider(cancellationToken, async (sqlProvider: SqlProvider) => {
+			if (!(await this._isVersionTableExist(cancellationToken, sqlProvider))) {
+				await this._createVersionTable(cancellationToken, sqlProvider);
+			}
+		});
+
+		for (const version of scheduleVersions) {
+			await this.sqlProviderFactory.usingProviderWithTransaction(cancellationToken, async (sqlProvider: SqlProvider) => {
+				const migrationLogger = new MigrationManager.MigrationLogger(this._log.getLogger(version));
+
+				const migrationTuple = this.migrationData[version];
+
+				if (migrationTuple.initSql !== null) {
+					migrationLogger.debug("Execute initSql");
+					migrationLogger.trace(EOL + migrationTuple.initSql);
+					await sqlProvider.statement(migrationTuple.initSql).execute(cancellationToken);
+				} else {
+					migrationLogger.debug("No initSql in this migration");
+				}
+
+				if (migrationTuple.migrationJavaScript !== null) {
+					migrationLogger.debug("Execute migrationJavaScriptFile");
+					migrationLogger.trace(migrationTuple.migrationJavaScript.content);
+					await MigrationManager.executeMigrationJavaScript(
+						cancellationToken, sqlProvider, migrationLogger, migrationTuple.migrationJavaScript
+					);
+				} else {
+					migrationLogger.debug("No migrationJavaScriptFile in this migration");
+				}
+
+				if (migrationTuple.finalizeSql !== null) {
+					migrationLogger.debug("Execute finalizeSql");
+					migrationLogger.trace(EOL + migrationTuple.finalizeSql);
+					await sqlProvider.statement(migrationTuple.finalizeSql).execute(cancellationToken);
+				} else {
+					migrationLogger.debug("No finalizeSql in this migration");
+				}
+
+				const logText: string = migrationLogger.flush();
+				this._insertVersionLog(cancellationToken, sqlProvider, version, logText);
+			});
+		}
+	}
 
 	/**
 	 * Gets current version of the database or `null` if version table is not presented.
@@ -38,9 +101,9 @@ export abstract class MigrationManager extends Initable {
 	 */
 	public abstract getCurrentVersion(cancellationToken: CancellationToken): Promise<string | null>;
 
-	protected get sqlProviderFactory(): SqlProviderFactory {
-		return this._sqlProviderFactory;
-	}
+	protected get sqlProviderFactory(): SqlProviderFactory { return this._sqlProviderFactory; }
+
+	protected get log(): Logger { return this._log; }
 
 	protected get migrationData(): MigrationManager.MigrationData {
 		if (this._migrationData === null) {
@@ -48,6 +111,8 @@ export abstract class MigrationManager extends Initable {
 		}
 		return this._migrationData;
 	}
+
+	protected get versionTableName(): string { return this._versionTableName; }
 
 	protected async onInit(cancellationToken: CancellationToken) {
 		if (!await existsAsync(this._migrationFilesRootPath)) {
@@ -57,7 +122,10 @@ export abstract class MigrationManager extends Initable {
 		const migrationData: {
 			[version: string]: {
 				readonly initSql: string | null;
-				readonly migrationJavaScriptFile: string | null;
+				readonly migrationJavaScript: {
+					readonly content: string;
+					readonly file: string;
+				} | null;
 				readonly finalizeSql: string | null;
 			};
 		} = {};
@@ -75,10 +143,13 @@ export abstract class MigrationManager extends Initable {
 
 				const migrationVersionData: {
 					initSql: string | null;
-					migrationJavaScriptFile: string | null;
+					migrationJavaScript: {
+						readonly content: string;
+						readonly file: string;
+					} | null;
 					finalizeSql: string | null;
 				} = {
-					initSql: null, migrationJavaScriptFile: null, finalizeSql: null
+					initSql: null, migrationJavaScript: null, finalizeSql: null
 				};
 
 				if (migrationFiles.includes(MigrationManager.SCRIPT.INIT)) {
@@ -91,7 +162,11 @@ export abstract class MigrationManager extends Initable {
 				if (migrationFiles.includes(MigrationManager.SCRIPT.MIGRATION)) {
 					cancellationToken.throwIfCancellationRequested();
 					const migrationJavaScriptFile = path.join(versionDirectory, MigrationManager.SCRIPT.MIGRATION);
-					migrationVersionData.migrationJavaScriptFile = migrationJavaScriptFile;
+					const migrationJavaScriptContent = await readFileAsync(migrationJavaScriptFile, "utf-8");
+					migrationVersionData.migrationJavaScript = Object.freeze({
+						file: migrationJavaScriptFile,
+						content: migrationJavaScriptContent
+					});
 				}
 
 				if (migrationFiles.includes(MigrationManager.SCRIPT.FINALIZE)) {
@@ -112,22 +187,37 @@ export abstract class MigrationManager extends Initable {
 		// Noting to dispose
 	}
 
+	protected abstract _createVersionTable(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider
+	): Promise<void>;
+	protected abstract _insertVersionLog(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string, logText: string
+	): Promise<void>;
+	protected abstract _isVersionTableExist(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider
+	): Promise<boolean>;
+	protected abstract _verifyVersionTableStructure(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider
+	): Promise<void>;
+
 	protected static async executeMigrationJavaScript(
 		cancellationToken: CancellationToken,
 		sqlProvider: SqlProvider, log: Logger,
-		migrationJavaScriptFile: string
+		migrationJavaScript: {
+			readonly content: string;
+			readonly file: string;
+		}
 	): Promise<void> {
-		const migrationJavaScriptContent = await readFileAsync(migrationJavaScriptFile, "utf-8");
 		await new Promise<void>((resolve, reject) => {
 			const sandbox = {
 				__private: { cancellationToken, log, resolve, reject, sqlProvider },
-				__dirname: path.dirname(migrationJavaScriptFile),
-				__filename: migrationJavaScriptFile
+				__dirname: path.dirname(migrationJavaScript.file),
+				__filename: migrationJavaScript.file
 			};
-			const script = new vm.Script(`${migrationJavaScriptContent}
+			const script = new vm.Script(`${migrationJavaScript.content}
 migration(__private.cancellationToken, __private.sqlProvider, __private.log).then(__private.resolve).catch(__private.reject);`,
 				{
-					filename: migrationJavaScriptFile
+					filename: migrationJavaScript.file
 				}
 			);
 			script.runInNewContext(sandbox, { displayErrors: false });
@@ -136,14 +226,26 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 }
 
 export namespace MigrationManager {
+	export interface Opts {
+		readonly migrationFilesRootPath: string;
 
-	export class WrongMigrationDataError extends InnerError { }
+		readonly sqlProviderFactory: SqlProviderFactory;
 
+		readonly log: Logger;
+
+		/**
+		 * Name of version table. Default `version`
+		 */
+		readonly versionTableName?: string;
+	}
 
 	export interface MigrationData {
 		readonly [version: string]: {
 			readonly initSql: string | null;
-			readonly migrationJavaScriptFile: string | null;
+			readonly migrationJavaScript: {
+				readonly content: string;
+				readonly file: string;
+			} | null;
 			readonly finalizeSql: string | null;
 		};
 	}
@@ -152,5 +254,64 @@ export namespace MigrationManager {
 		INIT = "init.sql",
 		MIGRATION = "migration.js",
 		FINALIZE = "finalize.sql"
+	}
+
+	export class MigrationError extends InnerError { }
+	export class WrongMigrationDataError extends MigrationError { }
+
+	export class MigrationLogger implements Logger {
+		public readonly isTraceEnabled: boolean;
+		public readonly isDebugEnabled: boolean;
+		public readonly isInfoEnabled: boolean;
+		public readonly isWarnEnabled: boolean;
+		public readonly isErrorEnabled: boolean;
+		public readonly isFatalEnabled: boolean;
+
+		private readonly _wrap: Logger;
+		private readonly _lines: Array<string>;
+
+		public constructor(wrap: Logger) {
+			this.isTraceEnabled = true;
+			this.isDebugEnabled = true;
+			this.isInfoEnabled = true;
+			this.isWarnEnabled = true;
+			this.isErrorEnabled = true;
+			this.isFatalEnabled = true;
+
+			this._lines = [];
+			this._wrap = wrap;
+		}
+
+		public flush(): string {
+			// Join and empty _lines
+			return this._lines.splice(0).join(EOL);
+		}
+
+		public trace(message: string, ...args: any[]): void {
+			this._wrap.trace(message, ...args);
+			this._lines.push("[TRACE] " + message);
+		}
+		public debug(message: string, ...args: any[]): void {
+			this._wrap.debug(message, ...args);
+			this._lines.push("[DEBUG] " + message);
+		}
+		public info(message: string, ...args: any[]): void {
+			this._wrap.info(message, ...args);
+			this._lines.push("[INFO] " + message);
+		}
+		public warn(message: string, ...args: any[]): void {
+			this._wrap.warn(message, ...args);
+			this._lines.push("[WARN] " + message);
+		}
+		public error(message: string, ...args: any[]): void {
+			this._wrap.error(message, ...args);
+			this._lines.push("[ERROR] " + message);
+		}
+		public fatal(message: string, ...args: any[]): void {
+			this._wrap.fatal(message, ...args);
+			this._lines.push("[FATAL]" + message);
+		}
+
+		public getLogger(name?: string | undefined): Logger { return this; }
 	}
 }
