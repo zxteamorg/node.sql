@@ -65,7 +65,7 @@ export abstract class MigrationManager extends Initable {
 
 				if (migrationTuple.initSql !== null) {
 					migrationLogger.debug("Execute initSql");
-					await this.executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.initSql);
+					await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.initSql);
 				} else {
 					migrationLogger.debug("No initSql in this migration");
 				}
@@ -73,7 +73,7 @@ export abstract class MigrationManager extends Initable {
 				if (migrationTuple.migrationJavaScript !== null) {
 					migrationLogger.debug("Execute migrationJavaScriptFile");
 					migrationLogger.trace(EOL + migrationTuple.migrationJavaScript.content);
-					await this.executeMigrationJavaScript(
+					await this._executeMigrationJavaScript(
 						cancellationToken, sqlProvider, migrationLogger, migrationTuple.migrationJavaScript
 					);
 				} else {
@@ -82,7 +82,7 @@ export abstract class MigrationManager extends Initable {
 
 				if (migrationTuple.finalizeSql !== null) {
 					migrationLogger.debug("Execute finalizeSql");
-					await this.executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.finalizeSql);
+					await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.finalizeSql);
 				} else {
 					migrationLogger.debug("No finalizeSql in this migration");
 				}
@@ -188,17 +188,8 @@ export abstract class MigrationManager extends Initable {
 	protected abstract _createVersionTable(
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider
 	): Promise<void>;
-	protected abstract _insertVersionLog(
-		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string, logText: string
-	): Promise<void>;
-	protected abstract _isVersionTableExist(
-		cancellationToken: CancellationToken, sqlProvider: SqlProvider
-	): Promise<boolean>;
-	protected abstract _verifyVersionTableStructure(
-		cancellationToken: CancellationToken, sqlProvider: SqlProvider
-	): Promise<void>;
 
-	protected async executeMigrationJavaScript(
+	protected async _executeMigrationJavaScript(
 		cancellationToken: CancellationToken,
 		sqlProvider: SqlProvider,
 		migrationLogger: Logger,
@@ -223,7 +214,7 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 		});
 	}
 
-	protected async executeMigrationSql(
+	protected async _executeMigrationSql(
 		cancellationToken: CancellationToken,
 		sqlProvider: SqlProvider,
 		migrationLogger: Logger,
@@ -232,6 +223,18 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 		migrationLogger.trace(EOL + sqlText);
 		await sqlProvider.statement(sqlText).execute(cancellationToken);
 	}
+
+	protected abstract _insertVersionLog(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string, logText: string
+	): Promise<void>;
+
+	protected abstract _isVersionTableExist(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider
+	): Promise<boolean>;
+
+	protected abstract _verifyVersionTableStructure(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider
+	): Promise<void>;
 }
 
 export namespace MigrationManager {
