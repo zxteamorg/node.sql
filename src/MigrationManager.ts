@@ -65,16 +65,15 @@ export abstract class MigrationManager extends Initable {
 
 				if (migrationTuple.initSql !== null) {
 					migrationLogger.debug("Execute initSql");
-					migrationLogger.trace(EOL + migrationTuple.initSql);
-					await sqlProvider.statement(migrationTuple.initSql).execute(cancellationToken);
+					await this.executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.initSql);
 				} else {
 					migrationLogger.debug("No initSql in this migration");
 				}
 
 				if (migrationTuple.migrationJavaScript !== null) {
 					migrationLogger.debug("Execute migrationJavaScriptFile");
-					migrationLogger.trace(migrationTuple.migrationJavaScript.content);
-					await MigrationManager.executeMigrationJavaScript(
+					migrationLogger.trace(EOL + migrationTuple.migrationJavaScript.content);
+					await this.executeMigrationJavaScript(
 						cancellationToken, sqlProvider, migrationLogger, migrationTuple.migrationJavaScript
 					);
 				} else {
@@ -83,8 +82,7 @@ export abstract class MigrationManager extends Initable {
 
 				if (migrationTuple.finalizeSql !== null) {
 					migrationLogger.debug("Execute finalizeSql");
-					migrationLogger.trace(EOL + migrationTuple.finalizeSql);
-					await sqlProvider.statement(migrationTuple.finalizeSql).execute(cancellationToken);
+					await this.executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.finalizeSql);
 				} else {
 					migrationLogger.debug("No finalizeSql in this migration");
 				}
@@ -200,9 +198,10 @@ export abstract class MigrationManager extends Initable {
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider
 	): Promise<void>;
 
-	protected static async executeMigrationJavaScript(
+	protected async executeMigrationJavaScript(
 		cancellationToken: CancellationToken,
-		sqlProvider: SqlProvider, log: Logger,
+		sqlProvider: SqlProvider,
+		migrationLogger: Logger,
 		migrationJavaScript: {
 			readonly content: string;
 			readonly file: string;
@@ -210,7 +209,7 @@ export abstract class MigrationManager extends Initable {
 	): Promise<void> {
 		await new Promise<void>((resolve, reject) => {
 			const sandbox = {
-				__private: { cancellationToken, log, resolve, reject, sqlProvider },
+				__private: { cancellationToken, log: migrationLogger, resolve, reject, sqlProvider },
 				__dirname: path.dirname(migrationJavaScript.file),
 				__filename: migrationJavaScript.file
 			};
@@ -222,6 +221,16 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 			);
 			script.runInNewContext(sandbox, { displayErrors: false });
 		});
+	}
+
+	protected async executeMigrationSql(
+		cancellationToken: CancellationToken,
+		sqlProvider: SqlProvider,
+		migrationLogger: Logger,
+		sqlText: string
+	): Promise<void> {
+		migrationLogger.trace(EOL + sqlText);
+		await sqlProvider.statement(sqlText).execute(cancellationToken);
 	}
 }
 
