@@ -88,21 +88,11 @@ export interface SqlResultRecord {
 	get(index: number): SqlData;
 }
 
-// export interface SqlResultSet extends IEnumerator<SqlResultRecord>, Disposable {
-// }
-
 export interface SqlStatement {
 	/**
 	 * Execute query and ignore any output
 	 */
 	execute(cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>): Promise<void>;
-
-	/**
-	 * Execute query with expectation of single line result
-	 */
-	executeSingle(
-		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
-	): Promise<SqlResultRecord>;
 
 	executeQuery(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
@@ -119,6 +109,21 @@ export interface SqlStatement {
 	executeScalarOrNull(
 		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
 	): Promise<SqlData | null>;
+
+	/**
+	 * Execute query with expectation of single line result
+	 */
+	executeSingle(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<SqlResultRecord>;
+
+	/**
+	 * Execute query with expectation of single line result or no any record
+	 */
+	executeSingleOrNull(
+		cancellationToken: CancellationToken, ...values: Array<SqlStatementParam>
+	): Promise<SqlResultRecord | null>;
+
 }
 
 export interface SqlTemporaryTable extends Disposable {
