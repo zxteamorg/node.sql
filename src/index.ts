@@ -155,6 +155,12 @@ export class SqlConstraintError extends SqlError {
 	}
 }
 
+/**
+ * Insufficient Permission
+ */
+export class SqlPermissionError extends SqlError {
+}
+
 export class SqlNoSuchRecordError extends SqlError {
 }
 
