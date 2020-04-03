@@ -58,7 +58,7 @@ export abstract class MigrationManager {
 				const migrationLogger = new MigrationManager.MigrationLogger(this._log.getLogger(version));
 
 				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(version);
-				const installScriptNames: Array<string> = [...versionBundle.installScriptNames].sort().reverse();
+				const installScriptNames: Array<string> = [...versionBundle.installScriptNames].sort();
 				for (const scriptName of installScriptNames) {
 					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
 					switch (script.kind) {
