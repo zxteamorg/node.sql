@@ -31,7 +31,7 @@
 					"protected-instance-method",
 					"private-constructor",
 					"private-instance-method"
-				  ]
+				]
 			}
 		],
 		"no-arg": true,
@@ -50,6 +50,7 @@
 		"no-empty": true,
 		"no-eval": true,
 		"no-inferrable-types": false,
+		"no-floating-promises": true,
 		"no-shadowed-variable": true,
 		"no-string-literal": true,
 		"no-switch-case-fall-through": true,

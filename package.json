@@ -1,7 +1,9 @@
 {
 	"name": "@zxteam/sql",
-	"version": "6.0.57",
+	"version": "6.0.58",
 	"description": "ZXTeam's Contract SQL",
+	"main": "./src/index.js",
+	"types": "./src/index.d.ts",
 	"author": {
 		"name": "ZXTeam",
 		"email": "pub@project.zxteam.org",
@@ -20,13 +22,16 @@
 	],
 	"license": "MIT",
 	"dependencies": {
-		"@zxteam/contract": "^6.0.56",
+		"@zxteam/contract": "^6.0.60",
 		"@zxteam/disposable": "^6.0.56",
-		"@zxteam/errors": "^6.0.41"
+		"@zxteam/errors": "^6.0.57",
+		"mustache": "^4.0.1"
 	},
 	"devDependencies": {
+		"@types/mustache": "^4.0.1",
 		"@types/node": "^11.15.7",
-		"@zxnode/build": "^0.0.34"
+		"@zxnode/build": "^0.0.34",
+		"@zxteam/cancellation": "^6.0.40"
 	},
 	"engines": {
 		"node": ">=11"
@@ -42,8 +47,7 @@
 	"homepage": "https://github.com/zxteamorg/node.sql",
 	"scripts": {
 		"build": "zxbuild clean dist && cp README.md .dist/",
-		"test": "true",
-		"test:bak": "nyc --exclude submodules --exclude test --extension=\".ts\" --reporter=lcov --reporter=text --reporter=text-summary mocha \"test/**/*.test.js\" --recursive --timeout 10000",
+		"test": "nyc --exclude submodules --exclude test --extension=\".ts\" --reporter=lcov --reporter=text --reporter=text-summary mocha \"test/**/*.test.js\" --recursive --timeout 10000",
 		"test:only": "mocha --require source-map-support/register \"test/**/*.test.js\" --recursive --timeout 10000"
 	},
 	"private": true

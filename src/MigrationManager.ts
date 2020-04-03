@@ -1,6 +1,5 @@
 import { CancellationToken, Logger } from "@zxteam/contract";
-import { Initable } from "@zxteam/disposable";
-import { InnerError, InvalidOperationError } from "@zxteam/errors";
+import { InnerError } from "@zxteam/errors";
 
 import * as fs from "fs";
 import { EOL } from "os";
@@ -8,41 +7,38 @@ import * as path from "path";
 import { promisify } from "util";
 import * as vm from "vm";
 
-import { SqlProviderFactory, SqlProvider, SqlError } from "./index";
+import { SqlProviderFactory, SqlProvider } from "./index";
+import { MigrationSources } from "./MigrationSources";
 
-const existsAsync = promisify(fs.exists);
-const readdirAsync = promisify(fs.readdir);
-const readFileAsync = promisify(fs.readFile);
-
-export abstract class MigrationManager extends Initable {
-	private readonly _migrationFilesRootPath: string;
+export abstract class MigrationManager {
 	private readonly _sqlProviderFactory: SqlProviderFactory;
+	private readonly _migrationSources: MigrationSources;
 	private readonly _log: Logger;
 	private readonly _versionTableName: string;
 
-	private _migrationData: MigrationManager.MigrationData | null;
 
 	public constructor(opts: MigrationManager.Opts) {
-		super();
-		this._migrationFilesRootPath = opts.migrationFilesRootPath;
+		this._migrationSources = opts.migrationSources;
 		this._sqlProviderFactory = opts.sqlProviderFactory;
 		this._log = opts.log;
-		this._versionTableName = opts.versionTableName !== undefined ? opts.versionTableName : "version";
-		this._migrationData = null;
+		this._versionTableName = opts.versionTableName !== undefined ? opts.versionTableName : "__migration";
 	}
 
 	/**
-	 * Make migration
-	 * @param cancellationToken Allows to request cancel of the operation.
+	 * Install versions (increment version)
+	 * @param cancellationToken A cancellation token that can be used to cancel the action.
 	 * @param targetVersion Optional target version. Will use latest version if omited.
 	 */
-	public async migrate(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
+	public async install(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
 		const currentVersion: string | null = await this.getCurrentVersion(cancellationToken);
-		const availableVersions: Array<string> = Object.keys(this.migrationData).sort();
+		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort();
 		let scheduleVersions: Array<string> = availableVersions;
 
 		if (currentVersion !== null) {
-			scheduleVersions = scheduleVersions.reduce<Array<string>>(function (p, c) { if (c > currentVersion) { p.push(c); } return p; }, []);
+			scheduleVersions = scheduleVersions.reduce<Array<string>>(
+				(p, c) => { if (c > currentVersion) { p.push(c); } return p; },
+				[]
+			);
 		}
 
 		if (targetVersion !== undefined) {
@@ -61,34 +57,100 @@ export abstract class MigrationManager extends Initable {
 			await this.sqlProviderFactory.usingProviderWithTransaction(cancellationToken, async (sqlProvider: SqlProvider) => {
 				const migrationLogger = new MigrationManager.MigrationLogger(this._log.getLogger(version));
 
-				const migrationTuple = this.migrationData[version];
-
-				if (migrationTuple.initSql !== null) {
-					migrationLogger.debug("Execute initSql");
-					await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.initSql);
-				} else {
-					migrationLogger.debug("No initSql in this migration");
-				}
-
-				if (migrationTuple.migrationJavaScript !== null) {
-					migrationLogger.debug("Execute migrationJavaScriptFile");
-					migrationLogger.trace(EOL + migrationTuple.migrationJavaScript.content);
-					await this._executeMigrationJavaScript(
-						cancellationToken, sqlProvider, migrationLogger, migrationTuple.migrationJavaScript
-					);
-				} else {
-					migrationLogger.debug("No migrationJavaScriptFile in this migration");
-				}
-
-				if (migrationTuple.finalizeSql !== null) {
-					migrationLogger.debug("Execute finalizeSql");
-					await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, migrationTuple.finalizeSql);
-				} else {
-					migrationLogger.debug("No finalizeSql in this migration");
+				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(version);
+				const installScriptNames: Array<string> = [...versionBundle.installScriptNames].sort().reverse();
+				for (const scriptName of installScriptNames) {
+					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
+					switch (script.kind) {
+						case MigrationSources.Script.Kind.SQL: {
+							migrationLogger.debug(`Execute SQL script: ${version}:${script.name}`);
+							migrationLogger.trace(EOL + script.content);
+							await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, script.content);
+							break;
+						}
+						case MigrationSources.Script.Kind.JAVASCRIPT: {
+							migrationLogger.debug(`Execute JS script: ${version}:${script.name}`);
+							migrationLogger.trace(EOL + script.content);
+							await this._executeMigrationJavaScript(
+								cancellationToken, sqlProvider, migrationLogger,
+								{
+									content: script.content,
+									file: script.file
+								}
+							);
+							break;
+						}
+						default:
+							migrationLogger.warn(`Skip script '${version}:${script.name}' due unknown kind of script`);
+					}
 				}
 
 				const logText: string = migrationLogger.flush();
-				this._insertVersionLog(cancellationToken, sqlProvider, version, logText);
+				await this._insertVersionLog(cancellationToken, sqlProvider, version, logText);
+			});
+		}
+	}
+
+	/**
+	 * Install versions (increment version)
+	 * @param cancellationToken A cancellation token that can be used to cancel the action.
+	 * @param targetVersion Optional target version. Will use latest version if omited.
+	 */
+	public async rollback(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
+		const currentVersion: string | null = await this.getCurrentVersion(cancellationToken);
+		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort().reverse();
+		let scheduleVersionNames: Array<string> = availableVersions;
+
+		if (currentVersion !== null) {
+			scheduleVersionNames = scheduleVersionNames.reduce<Array<string>>(
+				(p, c) => { if (c < currentVersion) { p.push(c); } return p; },
+				[]
+			);
+		}
+
+		if (targetVersion !== undefined) {
+			scheduleVersionNames = scheduleVersionNames.reduceRight<Array<string>>(
+				(p, c) => { if (c > targetVersion) { p.push(c); } return p; },
+				[]
+			);
+		}
+
+		for (const versionName of scheduleVersionNames) {
+			await this.sqlProviderFactory.usingProviderWithTransaction(cancellationToken, async (sqlProvider: SqlProvider) => {
+				if (! await this._isVersionLogExist(cancellationToken, sqlProvider, versionName)) {
+					this._log.warn(`Skip rollback for version '${versionName}' due this does not present inside database.`);
+					return;
+				}
+
+				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(versionName);
+				const rollbackScriptNames: Array<string> = [...versionBundle.rollbackScriptNames].sort().reverse();
+				for (const scriptName of rollbackScriptNames) {
+					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
+					switch (script.kind) {
+						case MigrationSources.Script.Kind.SQL: {
+							this._log.debug(`Execute SQL script: ${versionName}:${script.name}`);
+							this._log.trace(EOL + script.content);
+							await this._executeMigrationSql(cancellationToken, sqlProvider, this._log, script.content);
+							break;
+						}
+						case MigrationSources.Script.Kind.JAVASCRIPT: {
+							this._log.debug(`Execute JS script: ${versionName}:${script.name}`);
+							this._log.trace(EOL + script.content);
+							await this._executeMigrationJavaScript(
+								cancellationToken, sqlProvider, this._log,
+								{
+									content: script.content,
+									file: script.file
+								}
+							);
+							break;
+						}
+						default:
+							this._log.warn(`Skip script '${versionName}:${script.name}' due unknown kind of script`);
+					}
+				}
+
+				await this._removeVersionLog(cancellationToken, sqlProvider, versionName);
 			});
 		}
 	}
@@ -103,87 +165,7 @@ export abstract class MigrationManager extends Initable {
 
 	protected get log(): Logger { return this._log; }
 
-	protected get migrationData(): MigrationManager.MigrationData {
-		if (this._migrationData === null) {
-			throw new InvalidOperationError("Wrong operation at current state. Did you call init()?");
-		}
-		return this._migrationData;
-	}
-
 	protected get versionTableName(): string { return this._versionTableName; }
-
-	protected async onInit(cancellationToken: CancellationToken) {
-		if (!await existsAsync(this._migrationFilesRootPath)) {
-			throw new MigrationManager.WrongMigrationDataError(`Migration directory '${this._migrationFilesRootPath}' is not exist`);
-		}
-
-		const migrationData: {
-			[version: string]: {
-				readonly initSql: string | null;
-				readonly migrationJavaScript: {
-					readonly content: string;
-					readonly file: string;
-				} | null;
-				readonly finalizeSql: string | null;
-			};
-		} = {};
-
-		const listVersions: Array<string> = (await readdirAsync(this._migrationFilesRootPath, { withFileTypes: true }))
-			.filter(w => w.isDirectory())
-			.map(directory => directory.name);
-
-
-		if (listVersions.length > 0) {
-			for (const version of listVersions) {
-				cancellationToken.throwIfCancellationRequested();
-				const versionDirectory = path.join(this._migrationFilesRootPath, version);
-				const migrationFiles = await readdirAsync(versionDirectory);
-
-				const migrationVersionData: {
-					initSql: string | null;
-					migrationJavaScript: {
-						readonly content: string;
-						readonly file: string;
-					} | null;
-					finalizeSql: string | null;
-				} = {
-					initSql: null, migrationJavaScript: null, finalizeSql: null
-				};
-
-				if (migrationFiles.includes(MigrationManager.SCRIPT.INIT)) {
-					cancellationToken.throwIfCancellationRequested();
-					const initScriptFile = path.join(versionDirectory, MigrationManager.SCRIPT.INIT);
-					const initScriptContent: string = await readFileAsync(initScriptFile, "utf-8");
-					migrationVersionData.initSql = initScriptContent;
-				}
-
-				if (migrationFiles.includes(MigrationManager.SCRIPT.MIGRATION)) {
-					cancellationToken.throwIfCancellationRequested();
-					const migrationJavaScriptFile = path.join(versionDirectory, MigrationManager.SCRIPT.MIGRATION);
-					const migrationJavaScriptContent = await readFileAsync(migrationJavaScriptFile, "utf-8");
-					migrationVersionData.migrationJavaScript = Object.freeze({
-						file: migrationJavaScriptFile,
-						content: migrationJavaScriptContent
-					});
-				}
-
-				if (migrationFiles.includes(MigrationManager.SCRIPT.FINALIZE)) {
-					cancellationToken.throwIfCancellationRequested();
-					const finalizeScriptFile = path.join(versionDirectory, MigrationManager.SCRIPT.FINALIZE);
-					const finalizeScriptContent: string = await readFileAsync(finalizeScriptFile, "utf-8");
-					migrationVersionData.finalizeSql = finalizeScriptContent;
-				}
-
-				migrationData[version] = Object.freeze(migrationVersionData);
-			}
-		}
-
-		this._migrationData = Object.freeze(migrationData);
-	}
-
-	protected onDispose() {
-		// Noting to dispose
-	}
 
 	protected abstract _createVersionTable(
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider
@@ -228,9 +210,17 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string, logText: string
 	): Promise<void>;
 
+	protected abstract _isVersionLogExist(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string
+	): Promise<boolean>;
+
 	protected abstract _isVersionTableExist(
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider
 	): Promise<boolean>;
+
+	protected abstract _removeVersionLog(
+		cancellationToken: CancellationToken, sqlProvider: SqlProvider, version: string
+	): Promise<void>;
 
 	protected abstract _verifyVersionTableStructure(
 		cancellationToken: CancellationToken, sqlProvider: SqlProvider
@@ -239,33 +229,16 @@ migration(__private.cancellationToken, __private.sqlProvider, __private.log).the
 
 export namespace MigrationManager {
 	export interface Opts {
-		readonly migrationFilesRootPath: string;
+		readonly migrationSources: MigrationSources;
 
 		readonly sqlProviderFactory: SqlProviderFactory;
 
 		readonly log: Logger;
 
 		/**
-		 * Name of version table. Default `version`
+		 * Name of version table. Default `__migration`.
 		 */
 		readonly versionTableName?: string;
-	}
-
-	export interface MigrationData {
-		readonly [version: string]: {
-			readonly initSql: string | null;
-			readonly migrationJavaScript: {
-				readonly content: string;
-				readonly file: string;
-			} | null;
-			readonly finalizeSql: string | null;
-		};
-	}
-
-	export const enum SCRIPT {
-		INIT = "init.sql",
-		MIGRATION = "migration.js",
-		FINALIZE = "finalize.sql"
 	}
 
 	export class MigrationError extends InnerError { }

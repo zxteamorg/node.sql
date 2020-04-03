@@ -168,3 +168,4 @@ export class SqlSyntaxError extends SqlError {
 }
 
 export { MigrationManager } from "./MigrationManager";
+export { MigrationSources } from "./MigrationSources";
