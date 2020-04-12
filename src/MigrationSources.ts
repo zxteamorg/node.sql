@@ -21,11 +21,14 @@ export class MigrationSources {
 	 * @param cancellationToken A cancellation token that can be used to cancel the action.
 	 * @param sourceUri Sources url. Support schemas `file:`, `http+tar+gz:` and `https+tar+gz:`
 	 */
-	public static load(cancellationToken: CancellationToken, sourceUri: URL): Promise<MigrationSources> {
+	public static load(cancellationToken: CancellationToken, sourceUri: URL, opts?: {
+		readonly versionFrom?: string;
+		readonly versionTo?: string;
+	}): Promise<MigrationSources> {
 		switch (sourceUri.protocol as UrlSchemas) {
 			case UrlSchemas.FILE: {
 				const sourceDirectory: string = fileURLToPath(sourceUri);
-				return MigrationSources.loadFromFilesystem(cancellationToken, sourceDirectory);
+				return MigrationSources.loadFromFilesystem(cancellationToken, sourceDirectory, opts);
 			}
 			case UrlSchemas.HTTP_TAR_GZ:
 				throw new InvalidOperationError("Not implemented yet");
@@ -37,7 +40,10 @@ export class MigrationSources {
 	}
 
 	public static async loadFromFilesystem(
-		cancellationToken: CancellationToken, sourceDirectory: string
+		cancellationToken: CancellationToken, sourceDirectory: string, opts?: {
+			readonly versionFrom?: string;
+			readonly versionTo?: string;
+		}
 	): Promise<MigrationSources> {
 		if (!await existsAsync(sourceDirectory)) {
 			throw new MigrationSources.WrongMigrationDataError(`Migration directory '${sourceDirectory}' is not exist`);
@@ -52,6 +58,20 @@ export class MigrationSources {
 
 		if (listVersions.length > 0) {
 			for (const version of listVersions) {
+				if (opts !== undefined) {
+					// Control version load range, skip out range versions
+					if (opts.versionFrom !== undefined) {
+						if (version < opts.versionFrom) {
+							continue;
+						}
+					}
+					if (opts.versionTo !== undefined) {
+						if (version > opts.versionTo) {
+							continue;
+						}
+					}
+				}
+
 				cancellationToken.throwIfCancellationRequested();
 				const versionDirectory = path.join(sourceDirectory, version);
 
