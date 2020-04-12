@@ -1,6 +1,6 @@
 {
 	"name": "@zxteam/sql",
-	"version": "6.0.59",
+	"version": "6.0.60",
 	"description": "ZXTeam's Contract SQL",
 	"main": "./src/index.js",
 	"types": "./src/index.d.ts",

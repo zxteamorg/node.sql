@@ -63,13 +63,13 @@ export abstract class MigrationManager {
 					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
 					switch (script.kind) {
 						case MigrationSources.Script.Kind.SQL: {
-							migrationLogger.debug(`Execute SQL script: ${version}:${script.name}`);
+							migrationLogger.info(`Execute SQL script: ${script.name}`);
 							migrationLogger.trace(EOL + script.content);
 							await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, script.content);
 							break;
 						}
 						case MigrationSources.Script.Kind.JAVASCRIPT: {
-							migrationLogger.debug(`Execute JS script: ${version}:${script.name}`);
+							migrationLogger.info(`Execute JS script: ${script.name}`);
 							migrationLogger.trace(EOL + script.content);
 							await this._executeMigrationJavaScript(
 								cancellationToken, sqlProvider, migrationLogger,
@@ -128,13 +128,13 @@ export abstract class MigrationManager {
 					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
 					switch (script.kind) {
 						case MigrationSources.Script.Kind.SQL: {
-							this._log.debug(`Execute SQL script: ${versionName}:${script.name}`);
+							this._log.info(`Execute SQL script: ${script.name}`);
 							this._log.trace(EOL + script.content);
 							await this._executeMigrationSql(cancellationToken, sqlProvider, this._log, script.content);
 							break;
 						}
 						case MigrationSources.Script.Kind.JAVASCRIPT: {
-							this._log.debug(`Execute JS script: ${versionName}:${script.name}`);
+							this._log.info(`Execute JS script: ${script.name}`);
 							this._log.trace(EOL + script.content);
 							await this._executeMigrationJavaScript(
 								cancellationToken, sqlProvider, this._log,
