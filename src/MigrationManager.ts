@@ -43,7 +43,7 @@ export abstract class MigrationManager {
 
 		if (targetVersion !== undefined) {
 			scheduleVersions = scheduleVersions.reduceRight<Array<string>>(function (p, c) {
-				if (c <= targetVersion) { p.push(c); } return p;
+				if (c <= targetVersion) { p.unshift(c); } return p;
 			}, []);
 		}
 
@@ -110,7 +110,7 @@ export abstract class MigrationManager {
 
 		if (targetVersion !== undefined) {
 			scheduleVersionNames = scheduleVersionNames.reduceRight<Array<string>>(
-				(p, c) => { if (c > targetVersion) { p.push(c); } return p; },
+				(p, c) => { if (c > targetVersion) { p.unshift(c); } return p; },
 				[]
 			);
 		}
