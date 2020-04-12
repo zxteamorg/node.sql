@@ -125,7 +125,7 @@ export abstract class MigrationManager {
 				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(versionName);
 				const rollbackScriptNames: Array<string> = [...versionBundle.rollbackScriptNames].sort().reverse();
 				for (const scriptName of rollbackScriptNames) {
-					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
+					const script: MigrationSources.Script = versionBundle.getRollbackScript(scriptName);
 					switch (script.kind) {
 						case MigrationSources.Script.Kind.SQL: {
 							this._log.info(`Execute SQL script: ${script.name}`);
