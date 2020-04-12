@@ -103,7 +103,7 @@ export abstract class MigrationManager {
 
 		if (currentVersion !== null) {
 			scheduleVersionNames = scheduleVersionNames.reduce<Array<string>>(
-				(p, c) => { if (c < currentVersion) { p.push(c); } return p; },
+				(p, c) => { if (c <= currentVersion) { p.push(c); } return p; },
 				[]
 			);
 		}
