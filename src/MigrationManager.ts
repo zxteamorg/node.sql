@@ -31,7 +31,7 @@ export abstract class MigrationManager {
 	 */
 	public async install(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
 		const currentVersion: string | null = await this.getCurrentVersion(cancellationToken);
-		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort();
+		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort(); // from old version to new version
 		let scheduleVersions: Array<string> = availableVersions;
 
 		if (currentVersion !== null) {
@@ -53,11 +53,11 @@ export abstract class MigrationManager {
 			}
 		});
 
-		for (const version of scheduleVersions) {
+		for (const versionName of scheduleVersions) {
 			await this.sqlProviderFactory.usingProviderWithTransaction(cancellationToken, async (sqlProvider: SqlProvider) => {
-				const migrationLogger = new MigrationManager.MigrationLogger(this._log.getLogger(version));
+				const migrationLogger = new MigrationManager.MigrationLogger(this._log.getLogger(versionName));
 
-				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(version);
+				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(versionName);
 				const installScriptNames: Array<string> = [...versionBundle.installScriptNames].sort();
 				for (const scriptName of installScriptNames) {
 					const script: MigrationSources.Script = versionBundle.getInstallScript(scriptName);
@@ -81,12 +81,12 @@ export abstract class MigrationManager {
 							break;
 						}
 						default:
-							migrationLogger.warn(`Skip script '${version}:${script.name}' due unknown kind of script`);
+							migrationLogger.warn(`Skip script '${versionName}:${script.name}' due unknown kind of script`);
 					}
 				}
 
 				const logText: string = migrationLogger.flush();
-				await this._insertVersionLog(cancellationToken, sqlProvider, version, logText);
+				await this._insertVersionLog(cancellationToken, sqlProvider, versionName, logText);
 			});
 		}
 	}
@@ -98,7 +98,7 @@ export abstract class MigrationManager {
 	 */
 	public async rollback(cancellationToken: CancellationToken, targetVersion?: string): Promise<void> {
 		const currentVersion: string | null = await this.getCurrentVersion(cancellationToken);
-		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort().reverse();
+		const availableVersions: Array<string> = [...this._migrationSources.versionNames].sort().reverse(); // from new version to old version
 		let scheduleVersionNames: Array<string> = availableVersions;
 
 		if (currentVersion !== null) {
@@ -123,21 +123,23 @@ export abstract class MigrationManager {
 				}
 
 				const versionBundle: MigrationSources.VersionBundle = this._migrationSources.getVersionBundle(versionName);
-				const rollbackScriptNames: Array<string> = [...versionBundle.rollbackScriptNames].sort().reverse();
+				const rollbackScriptNames: Array<string> = [...versionBundle.rollbackScriptNames].sort();
 				for (const scriptName of rollbackScriptNames) {
+					const migrationLogger = this._log.getLogger(versionName);
+
 					const script: MigrationSources.Script = versionBundle.getRollbackScript(scriptName);
 					switch (script.kind) {
 						case MigrationSources.Script.Kind.SQL: {
-							this._log.info(`Execute SQL script: ${script.name}`);
-							this._log.trace(EOL + script.content);
-							await this._executeMigrationSql(cancellationToken, sqlProvider, this._log, script.content);
+							migrationLogger.info(`Execute SQL script: ${script.name}`);
+							migrationLogger.trace(EOL + script.content);
+							await this._executeMigrationSql(cancellationToken, sqlProvider, migrationLogger, script.content);
 							break;
 						}
 						case MigrationSources.Script.Kind.JAVASCRIPT: {
-							this._log.info(`Execute JS script: ${script.name}`);
-							this._log.trace(EOL + script.content);
+							migrationLogger.info(`Execute JS script: ${script.name}`);
+							migrationLogger.trace(EOL + script.content);
 							await this._executeMigrationJavaScript(
-								cancellationToken, sqlProvider, this._log,
+								cancellationToken, sqlProvider, migrationLogger,
 								{
 									content: script.content,
 									file: script.file
@@ -146,7 +148,7 @@ export abstract class MigrationManager {
 							break;
 						}
 						default:
-							this._log.warn(`Skip script '${versionName}:${script.name}' due unknown kind of script`);
+							migrationLogger.warn(`Skip script '${versionName}:${script.name}' due unknown kind of script`);
 					}
 				}
 
