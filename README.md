@@ -1,3 +1,7 @@
+# DEPRECATED
+
+The project has been moved to https://github.com/freemework/common/tree/src-typescript
+
 # ZXTeam's SQL Facade Contract 
 [![npm version badge](https://img.shields.io/npm/v/@zxteam/sql.svg)](https://www.npmjs.com/package/@zxteam/sql)
 [![downloads badge](https://img.shields.io/npm/dm/@zxteam/sql.svg)](https://www.npmjs.com/package/@zxteam/sql)
